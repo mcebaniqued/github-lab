@@ -1,8 +1,9 @@
 import json
 import requests
-# import csv
-# import os
+import csv
+import os
 from datetime import datetime
+import pprint
 
 # GitHub Authentication function
 def github_auth(url, lsttoken, ct):
@@ -21,7 +22,7 @@ def github_auth(url, lsttoken, ct):
 # @dictFiles, empty dictionary of files
 # @lstTokens, GitHub authentication tokens
 # @repo, GitHub repo
-def countfiles(dictfiles, lsttokens, repo):
+def countfiles(dictfiles, dictauthors, lsttokens, repo):
     ipage = 1  # url page counter
     ct = 0  # token counter
 
@@ -56,7 +57,10 @@ def countfiles(dictfiles, lsttokens, repo):
                 filesjson = shaDetails['files'] # Gets the files touched by the commit
                 for filenameObj in filesjson: # Iterate through the files touched by the commit
                     filename = filenameObj['filename'] # Gets the filename of the file touched by the commit
-                    dictfiles[filename] = dictfiles.get(filename, 0) + 1 # Increment the number of touches for the file
+                    #dictfiles[filename] = dictfiles.get(filename, 0) + 1 # Increment the number of touches for the file
+                    
+                    dictfiles[filename] = dictfiles.get(filename, []) + [date] # Add the date of the commit to the list of dates for the file
+                    dictauthors[author] = dictauthors.get(author, []) + [dictfiles]
                     print('\t', filename) # Print the filename
                 
             ipage += 1 # Increment the page counter
@@ -79,20 +83,22 @@ repo = 'scottyab/rootbeer'
 lstTokens = [""]
 
 dictfiles = dict()
-countfiles(dictfiles, lstTokens, repo)
+dictauthors = dict()
+countfiles(dictfiles, dictauthors, lstTokens, repo)
+# pprint.pprint(dictauthors)
 # print('Total number of files: ' + str(len(dictfiles)))
 
-# if not os.path.exists("data"):
-#  os.makedirs("data")
+if not os.path.exists("data"):
+ os.makedirs("data")
 
-# file = repo.split('/')[1]
-# # change this to the path of your file
-# fileOutput = 'data/file_' + file + '.csv'
-# #rows = ["Filename", "Touches"]
-# rows = ["Filename", "Author", "Date"]
-# fileCSV = open(fileOutput, 'w')
-# writer = csv.writer(fileCSV)
-# writer.writerow(rows)
+file = repo.split('/')[1]
+# change this to the path of your file
+fileOutput = 'data/file_' + file + '.csv'
+#rows = ["Filename", "Touches"]
+rows = ["Author", "Filename", "Date"]
+fileCSV = open(fileOutput, 'w')
+writer = csv.writer(fileCSV)
+writer.writerow(rows)
 
 # bigcount = None
 # bigfilename = None
@@ -104,3 +110,11 @@ countfiles(dictfiles, lstTokens, repo)
 #         bigfilename = filename
 # fileCSV.close()
 # print('The file ' + bigfilename + ' has been touched ' + str(bigcount) + ' times.')
+
+#Write the author, filename, and date to a csv file
+for author, files in dictauthors.items():
+    for filename, dates in files[0].items():
+        for date in dates:
+            rows = [author, filename, date]
+            writer.writerow(rows)
+fileCSV.close()
